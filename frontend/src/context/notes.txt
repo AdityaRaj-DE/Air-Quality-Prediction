@@ -1,0 +1,33 @@
+AlertLevel: "null" 
+,AlertMessage: "null" 
+,AverageValue: "null" 
+,City: "Ahmedabad" 
+,Country: "India" 
+,Description: "Air pollution from manufacturing processes
+, including dust and smoke" 
+,EmissionRate: "null" 
+,EmissionTimestamp: "null" 
+,EmissionType: "PM2.5" 
+,EndDate: "null" 
+,HazardLevel: "null" 
+,Humidity: 65.2 
+,Latitude: 23.0225 
+,LocationID: 
+,Longitude: 72.5714 
+,MeasurementUnit: "null" 
+,MetricName: "null" 
+,PopulationDensity: 12000 
+,PrecipitationLevel: 0.2 
+,ReadingAccuracy: "null" 
+,ReadingTimestamp: "null" 
+,Region: "Gujarat" 
+,SourceType: "Industrial Factory" 
+,StartDate: "null" 
+,Temperature: 28.5 
+,ThresholdValue: "null" 
+,Value: "null" 
+,WeatherTimestamp: "2024-11-
+,01T02:
+,30:00.000Z" 
+,WindDirection: "North" 
+,WindSpeed: 12.3

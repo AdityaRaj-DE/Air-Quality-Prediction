@@ -3,35 +3,38 @@ import React, { createContext, useState } from "react";
 export const AQIContext = createContext();
 
 const AQIProvider = ({ children }) => {
-  const [citiesData, setCitiesData] = useState([]); // table
-  const [selectedCity, setSelectedCity] = useState(null); // detail
+  const [citiesData, setCitiesData] = useState([]);
+  const [selectedCity, setSelectedCity] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
   const fetchCityData = async (city) => {
     setLoading(true);
+    try {
+      const [current, predicted] = await Promise.all([
+        fetch(`${API}/aqi/current?city=${city}`).then(r => r.json()),
+        fetch(`${API}/predict/city?city=${city}`).then(r => r.json())
+      ]);
 
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-    const [realtimeRes, predictedRes] = await Promise.all([
-      fetch(`${apiUrl}/aqi/current?city=${city}`).then(r => r.json()),
-      fetch(`${apiUrl}/predict/city?city=${city}`).then(r => r.json())
-    ]);
+      const normalized = {
+        city,
+        aqi_api: current.current_aqi,
+        aqi_ml: predicted.predicted_aqi_ml,
+        pollutants: current.pollutants,
+        timestamp: current.timestamp
+      };
 
-    const cityObj = {
-      city,
-      country: "India",
-      region: city,
-      realtime: realtimeRes,
-      predicted: predictedRes
-    };
+      setSelectedCity(normalized);
 
-    setSelectedCity(cityObj);
-
-    setCitiesData(prev => {
-      const exists = prev.find(c => c.city === city);
-      return exists ? prev : [...prev, cityObj];
-    });
-
-    setLoading(false);
+      setCitiesData(prev =>
+        prev.find(c => c.city === city) ? prev : [...prev, normalized]
+      );
+    } catch (err) {
+      console.error("AQI fetch failed:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

@@ -1,10 +1,11 @@
 import { useContext, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { AQIContext } from "../../context/AQIContext";
+import AQITrendChart from "../ui/AQITrendChart";
 
 const LocationPage = () => {
   const { city } = useParams();
-  const { selectedCity, fetchCityData, loading } = useContext(AQIContext);
+  const { selectedCity, trendData, fetchCityData, loading } = useContext(AQIContext);
 
   useEffect(() => {
     fetchCityData(city);
@@ -37,6 +38,8 @@ const LocationPage = () => {
           ))}
         </div>
       </div>
+      <AQITrendChart data={trendData} />
+
     </div>
   );
 };

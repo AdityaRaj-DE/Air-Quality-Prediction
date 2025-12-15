@@ -8,7 +8,7 @@ from datetime import datetime
 from pathlib import Path
 from dotenv import load_dotenv
 import os
-
+from fastapi.middleware.cors import CORSMiddleware
 # Load environment variables
 load_dotenv()
 
@@ -17,10 +17,10 @@ load_dotenv()
 # ===============================
 DB_CONFIG = {
     "host": os.getenv("DB_HOST"),
-    "database": os.getenv("DB_NAME"),
+    "database": os.getenv("DB_DATABASE"),
     "user": os.getenv("DB_USER"),
     "password": os.getenv("DB_PASSWORD"),
-    "port": int(os.getenv("DB_PORT", 5432))
+    "port": 5432
 }
 OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY")
 
@@ -41,7 +41,13 @@ app = FastAPI(
     title="Air Quality Prediction & Analytics API",
     version="1.0"
 )
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 # =====================================================
 # SCHEMAS
 # =====================================================
@@ -108,6 +114,13 @@ def get_live_pollution(lat, lon):
 
 
 def predict_aqi(features: dict):
+    # 1. Unit correction
+    features["co"] = features["co"] / 1000.0  # μg/m³ → mg/m³
+
+    # 2. Normalize to training-like bounds
+    features = normalize_features(features)
+
+    # 3. Model input
     x = np.array([[
         features["pm25"],
         features["pm10"],
@@ -117,7 +130,25 @@ def predict_aqi(features: dict):
         features["o3"]
     ]])
 
-    return float(model.predict(x)[0])
+    # 4. Predict
+    predicted = float(model.predict(x)[0])
+
+    # 5. Enforce AQI limits
+    predicted = max(0, min(predicted, 500))
+
+    return predicted
+
+
+
+def normalize_features(features):
+    return {
+        "pm25": min(features["pm25"], 500),
+        "pm10": min(features["pm10"], 600),
+        "no2": min(features["no2"], 200),
+        "so2": min(features["so2"], 200),
+        "co": min(features["co"], 50),   # mg/m³
+        "o3": min(features["o3"], 300)
+    }
 
 # =====================================================
 # ENDPOINTS
@@ -240,3 +271,39 @@ def get_current_aqi(city: str):
         },
         "timestamp": live_data["timestamp"]
     }
+
+@app.get("/analytics/trend")
+def aqi_trend(city: str, limit: int = 10):
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        cur.execute("""
+            SELECT predicted_aqi, prediction_time
+            FROM aqi_predictions
+            WHERE city = %s
+            ORDER BY prediction_time DESC
+            LIMIT %s
+        """, (city, limit))
+
+        rows = cur.fetchall()
+    except Exception as e:
+        print("TREND ERROR:", e)
+        raise HTTPException(status_code=500, detail="Failed to fetch trend data")
+    finally:
+        if cur: cur.close()
+        if conn: conn.close()
+
+    if not rows:
+        return []
+
+    # Reverse so graph goes left → right
+    rows.reverse()
+
+    return [
+        {
+            "aqi": row[0],
+            "time": row[1].isoformat()
+        }
+        for row in rows
+    ]

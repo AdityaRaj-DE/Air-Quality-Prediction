@@ -99,5 +99,3 @@ Thumbs.db
 .DS_Store
 
 data
-model
-aqi_modle.pkl

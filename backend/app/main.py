@@ -172,23 +172,23 @@ def predict_city(city: str):
     predicted_aqi = predict_aqi(live_data)
 
     # Store in DB
-    conn = get_db_connection()
-    cur = conn.cursor()
+    # conn = get_db_connection()
+    # cur = conn.cursor()
 
-    cur.execute("""
-        INSERT INTO aqi_predictions
-        (city, prediction_time, predicted_aqi, model_name)
-        VALUES (%s, %s, %s, %s)
-    """, (
-        city,
-        datetime.utcnow(),
-        predicted_aqi,
-        "RandomForest_v1"
-    ))
+    # cur.execute("""
+    #     INSERT INTO aqi_predictions
+    #     (city, prediction_time, predicted_aqi, model_name)
+    #     VALUES (%s, %s, %s, %s)
+    # """, (
+    #     city,
+    #     datetime.utcnow(),
+    #     predicted_aqi,
+    #     "RandomForest_v1"
+    # ))
 
-    conn.commit()
-    cur.close()
-    conn.close()
+    # conn.commit()
+    # cur.close()
+    # conn.close()
 
     return {
         "city": city,

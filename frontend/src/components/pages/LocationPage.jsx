@@ -38,7 +38,8 @@ const LocationPage = () => {
           ))}
         </div>
       </div>
-      <AQITrendChart data={trendData} />
+      <h1 className="font-bold">Due to free database this option is block by developer;</h1>
+      {/* <AQITrendChart data={trendData} /> */}
 
     </div>
   );

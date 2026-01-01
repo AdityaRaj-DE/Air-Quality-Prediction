@@ -17,12 +17,13 @@ const AQIProvider = ({ children }) => {
         fetch(`${API}/aqi/current?city=${city}`),
         fetch(`${API}/predict/city?city=${city}`)
       ]);
-      const trendRes = await fetch(
-        `${API}/analytics/trend?city=${city}&limit=10`
-      );
+      // const trendRes = await fetch(
+      //   `${API}/analytics/trend?city=${city}&limit=10`
+      // );
       
-      const trend = trendRes.ok ? await trendRes.json() : [];
-      setTrendData(trend);
+      // const trend = trendRes.ok ? await trendRes.json() : [];
+      // setTrendData(trend);
+      setTrendData([]);
       
       if (currentRes.status === 404 || predictRes.status === 404) {
         throw new Error("City not found");

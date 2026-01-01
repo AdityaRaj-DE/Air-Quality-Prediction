@@ -83,8 +83,8 @@ dist-ssr/
 *.ipynb_checkpoints/
 
 # Model files (uncomment if models shouldn't be committed)
-backend/model/*.pkl
-backend/model/*.joblib
+# backend/model/*.pkl
+# backend/model/*.joblib
 
 # Data files (uncomment if data files are large and shouldn't be committed)
 data/*.csv

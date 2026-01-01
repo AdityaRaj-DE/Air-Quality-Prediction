@@ -72,10 +72,14 @@ def train_models(df):
 
     # ---- Random Forest (Main Model) ----
     rf = RandomForestRegressor(
-        n_estimators=200,
+        n_estimators=100,        # ↓ from 200
+        max_depth=12,            # CRITICAL
+        min_samples_leaf=5,      # CRITICAL
+        min_samples_split=10,    # CRITICAL
         random_state=42,
         n_jobs=-1
     )
+
 
     rf.fit(X_train, y_train)
     rf_preds = rf.predict(X_test)
@@ -100,8 +104,13 @@ def save_model(model):
     model_dir = Path(__file__).resolve().parent / "model"
     model_dir.mkdir(exist_ok=True)
 
-    model_path = model_dir / "aqi_model.pkl"
-    joblib.dump(model, model_path)
+    model_path = model_dir / "aqi_model_new.pkl"
+    joblib.dump(
+        model,
+        model_path,
+        compress=("gzip", 3)
+    )
+
 
     print(f"✅ Model saved at: {model_path}")
 

@@ -278,9 +278,3 @@ aqi-ml-system/
 - **Deployment-ready thinking**
 
 ---
-
-## 📌 Final Note
-
-This project is **not** a toy ML demo or a static DBMS assignment.
-
-It is a **production-style, full-stack ML system** designed to show how real AQI monitoring and prediction platforms are built.

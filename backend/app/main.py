@@ -9,6 +9,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 import os
 from fastapi.middleware.cors import CORSMiddleware
+from typing import List, Optional
+
 # Load environment variables
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
@@ -65,6 +67,14 @@ class ManualAQIInput(BaseModel):
     so2: float
     co: float
     o3: float
+
+
+class CityBatchInput(BaseModel):
+    cities: List[str]
+
+
+class ManualAQIBatchInput(BaseModel):
+    items: List[ManualAQIInput]
 
 # =====================================================
 # UTILITIES
@@ -142,6 +152,37 @@ def predict_aqi(features: dict):
     predicted = max(0, min(predicted, 500))
 
     return predicted
+
+
+def predict_aqi_batch(features_list: List[dict]):
+    # features_list = [ {pm25, pm10, no2, so2, co, o3}, {...}, ...]
+    X = []
+
+    for features in features_list:
+        # 1) copy (avoid mutation bugs)
+        f = dict(features)
+
+        # 2) unit correction
+        f["co"] = f["co"] / 1000.0  # μg/m³ → mg/m³
+
+        # 3) normalize
+        f = normalize_features(f)
+
+        X.append([
+            f["pm25"],
+            f["pm10"],
+            f["no2"],
+            f["so2"],
+            f["co"],
+            f["o3"]
+        ])
+
+    X = np.array(X)
+
+    preds = model.predict(X)
+    preds = [max(0, min(float(p), 500)) for p in preds]  # clamp 0..500
+
+    return preds
 
 
 
@@ -312,3 +353,84 @@ def aqi_trend(city: str, limit: int = 10):
         }
         for row in rows
     ]
+
+
+@app.post("/predict/cities")
+def predict_cities_batch(payload: CityBatchInput):
+    results = []
+
+    for city in payload.cities:
+        try:
+            lat, lon = get_coordinates(city)
+            live_data = get_live_pollution(lat, lon)
+            predicted_aqi = predict_aqi(live_data)
+
+            results.append({
+                "city": city,
+                "real_time_aqi_api": live_data["api_aqi"],
+                "predicted_aqi_ml": round(predicted_aqi, 2),
+                "pollutants": {
+                    "pm25": live_data["pm25"],
+                    "pm10": live_data["pm10"],
+                    "no2": live_data["no2"],
+                    "so2": live_data["so2"],
+                    "co": live_data["co"],
+                    "o3": live_data["o3"]
+                },
+                "model": "RandomForest_v1",
+                "source": "OpenWeather + ML",
+                "timestamp": live_data["timestamp"]
+            })
+
+        except Exception as e:
+            results.append({
+                "city": city,
+                "error": str(e)
+            })
+
+    # OPTIONAL: store batch in DB (recommended for batch prediction)
+    # conn = get_db_connection()
+    # cur = conn.cursor()
+    # for item in results:
+    #     if "predicted_aqi_ml" in item:
+    #         cur.execute("""
+    #             INSERT INTO aqi_predictions
+    #             (city, prediction_time, predicted_aqi, model_name)
+    #             VALUES (%s, %s, %s, %s)
+    #         """, (
+    #             item["city"],
+    #             datetime.utcnow(),
+    #             item["predicted_aqi_ml"],
+    #             "RandomForest_v1"
+    #         ))
+    # conn.commit()
+    # cur.close()
+    # conn.close()
+
+    return {
+        "count": len(payload.cities),
+        "results": results
+    }
+
+
+@app.post("/predict/batch")
+def predict_manual_batch(payload: ManualAQIBatchInput):
+    # Convert each ManualAQIInput to dict
+    features_list = [item.dict() for item in payload.items]
+
+    # Batch prediction
+    preds = predict_aqi_batch(features_list)
+
+    results = []
+    for item, pred in zip(payload.items, preds):
+        results.append({
+            "city": item.city,
+            "predicted_aqi": round(pred, 2),
+            "model": "RandomForest_v1",
+            "mode": "manual_batch"
+        })
+
+    return {
+        "count": len(results),
+        "results": results
+    }

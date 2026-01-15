@@ -251,20 +251,10 @@ aqi-ml-system/
    - City-based navigation
    - Real-time + predicted AQI views
 
-6. **Future Deployment**
-   - Backend: Render / Railway
+6. **Deployment**
+   - Backend: Render
    - Database: Supabase
-   - Frontend: Vercel / Netlify
-
----
-
-## 🔮 Future Enhancements
-
-- AQI forecasting using time-series models
-- Historical AQI trend charts
-- City comparison dashboard
-- User alerts for high AQI
-- Role-based access (admin / public)
+   - Frontend: Vercel
 
 ---
 
